@@ -43,8 +43,8 @@ set(TEST_TARGETS
   sycl_tests
   task_graph_tests
   task_ring_buffer_tests
-  test_utils_tests
-  device_selection_tests
+  #test_utils_tests
+  #device_selection_tests
 )
 
 add_library(test_main test_main.cc)

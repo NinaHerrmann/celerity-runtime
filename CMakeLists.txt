@@ -10,10 +10,12 @@ set(CELERITY_VERSION_MAJOR ${CMAKE_MATCH_1})
 set(CELERITY_VERSION_MINOR ${CMAKE_MATCH_2})
 set(CELERITY_VERSION_PATCH ${CMAKE_MATCH_3})
 message(VERBOSE "Celerity version is ${CELERITY_VERSION_MAJOR}.${CELERITY_VERSION_MINOR}.${CELERITY_VERSION_PATCH}")
-
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}") #-stdlib=libc++
 project(celerity_runtime VERSION ${Celerity_VERSION} LANGUAGES CXX)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(ENABLE_ACC_CHECK ON)
@@ -36,7 +38,8 @@ find_package(MPI 2.0 REQUIRED)
 find_package(Threads REQUIRED)
 # TODO: Make optional
 find_package(CUDAToolkit REQUIRED)
-
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") #-stdlib=libc++
 set(CELERITY_SYCL_IMPL "OFF" CACHE STRING "hipSYCL|DPC++")
 
 include("${CELERITY_CMAKE_DIR}/TestDPCXX.cmake")
@@ -258,6 +261,7 @@ target_link_libraries(celerity_runtime PUBLIC
   spdlog::spdlog
   gch::small_vector
   libenvpp::libenvpp
+  atomic
   ${SYCL_LIB}
   CUDA::cuda_driver
   # TODO: This seems to prevent mixing debug/release builds of celerity and user applications
@@ -322,11 +326,14 @@ add_sycl_to_target(
 if(MSVC)
   target_compile_options(celerity_runtime PRIVATE /MP /W3)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-  target_compile_options(celerity_runtime PRIVATE -Wall -Wextra -Wno-unused-parameter -Werror=return-type -Werror=init-self)
+  target_compile_options(celerity_runtime PRIVATE -fPIE -Wall -Wextra -Wno-unused-parameter -Werror=return-type -Werror=init-self)
 endif()
-
+link_directories(/Applic.HPC/Easybuild/zen3/2022a/software/GCCcore/11.3.0/lib64/)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
 target_compile_options(celerity_runtime PUBLIC "${CELERITY_CXX_FLAGS}")
 
+set(LD_LIBRARY_PATH "${LD_LIBRARY_PATH} /Applic.HPC/Easybuild/zen3/2022a/software/GCCcore/11.3.0/lib64/")
 # Examples
 
 option(CELERITY_BUILD_EXAMPLES "Build various example applications" ON)
